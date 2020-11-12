@@ -1,186 +1,88 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-
-<!-- Load d3.js & color scale-->
+<script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/plugins/timeline.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
 <script src="https://d3js.org/d3.v4.js"></script>
-<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<div id="chartdiv"></div>
 
-<!-- Create a div where the graph will take place -->
-<div id="my_dataviz"></div>
-<script>
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
 
-// set the dimensions and margins of the graph
-var margin = {top: 20, right: 30, bottom: 30, left: 30},
-    width = 460 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-
-// append the svg object to the body of the page
-var svg = d3.select("#my_dataviz")
-  .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
-
-// Parse the Data
-d3.csv("total-players.csv", function(data) {
-  // List of groups = header of the csv files
-  var keys = data.columns.slice(1)
-   // console.log(keys);
-  // Add X axis
-  var x = d3.scaleLinear()
-    .domain(d3.extent(data, function(d) { return d.Year; }))
-    .range([ 0, width ]);
-  svg.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(x).ticks(5));
-
-  // Add Y axis
-  var y = d3.scaleLinear()
-    .domain([-1500000, 1500000])
-    .range([ height, 0 ]);
-//  svg.append("g")
-//    .call(d3.axisLeft(y));
-
-  // color palette
-  var color = d3.scaleOrdinal()
-    .domain(keys)
-    .range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628','#f781bf'])
-
-  //stack the data?
-  var stackedData = d3.stack()
-    .offset(d3.stackOffsetSilhouette)
-    .keys(keys)
-    (data)
-
-  // Show the areas
-  svg
-    .selectAll("mylayers")
-    .data(stackedData)
-    .enter()
-    .append("path")
-      .style("fill", function(d) { return color(d.key); })
-      .attr("d", d3.area()
-        .x(function(d, i) { console.log(d.data.Year); return x(d.data.Year); })
-        .y0(function(d) { return y(d[0]); })
-        .y1(function(d) { return y(d[1]); })
-    )
-
-})
-</script>
-
+#chartdiv {
+  width: 100%;
+  height: 600px;
+}
+</style>
 
 <script>
+/**
+ * ---------------------------------------
+ * This demo was created using amCharts 4.
+ * 
+ * For more information visit:
+ * https://www.amcharts.com/
+ * 
+ * Documentation is available at:
+ * https://www.amcharts.com/docs/v4/
+ * ---------------------------------------
+ */
 
-// set the dimensions and margins of the graph
-var margin = {top: 20, right: 30, bottom: 0, left: 10},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
+// Themes begin
+am4core.useTheme(am4themes_animated);
+// Themes end
 
-// append the svg object to the body of the page
-var svg = d3.select("#my_dataviz")
-  .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
 
-// Parse the Data
-d3.csv("new-lp.csv", function(data) {
 
-  // List of groups = header of the csv files
-  var keys = data.columns.slice(1)
 
-  // Add X axis
-  var x = d3.scaleLinear()
-    .domain(d3.extent(data, function(d) { return d.Year; }))
-    .range([ 0, width ]);
-  svg.append("g")
-    .attr("transform", "translate(0," + height*0.8 + ")")
-    .call(d3.axisBottom(x).tickSize(-height*.7).tickValues([2000, 2005, 2010, 2015, 2020]))
-    .select(".domain").remove()
-  // Customization
-  svg.selectAll(".tick line").attr("stroke", "#b8b8b8")
-  svg.selectAll(".tick").attr("font-size", "8px")
-  // Add X axis label:
-  svg.append("text")
-      .attr("text-anchor", "end")
-      .attr("y", height-30 )
-      .attr("x", width)
-      .text("Time (year)");
+var chart = am4core.create("chartdiv", am4plugins_timeline.SerpentineChart);
+chart.levelCount = 3;
 
-  // Add title:    
-  svg.append("text")
-        .attr("x", (width / 2))             
-        .attr("y", 0 - (margin.top / 2))
-        .attr("text-anchor", "middle")  
-        .style("font-size", "14px") 
-        .style("text-decoration", "none")  
-        .style('fill', 'darkBlue')
-        .text("The number of players across leagues from 2000 to 2020");
+chart.curveContainer.padding(50,20,50,20);
 
-  // Add Y axis
-  var y = d3.scaleLinear()
-    .domain([-1300000, 1300000])
-    .range([ height, 0 ]);
+d3.csv("NBA_score_new.csv", function(data) {
+    var base = 2000;
+    var new_data = [];
+    for (var i = 0; i < data.length; i++) {
+        new_data.push({ date: new Date(base, 0, 1), value: parseFloat(data[i].Total_Score) });
+        base += 1;
+    }
 
-  // color palette
-  var color = d3.scaleOrdinal()
-    .domain(keys)
-    .range(d3.schemeDark2);
+    chart.data = new_data;
 
-  //stack the data?
-  var stackedData = d3.stack()
-    .offset(d3.stackOffsetSilhouette)
-    .keys(keys)
-    (data)
+    var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+    dateAxis.renderer.grid.template.location = 0;
 
-  // create a tooltip
-  var Tooltip = svg
-    .append("text")
-    .attr("x", 0)
-    .attr("y", 10)
-    .style("opacity", 0)
-    .style("font-size", 12)
-    .style('fill', 'darkOrange')
+    dateAxis.renderer.line.disabled = true;
+    dateAxis.cursorTooltipEnabled = false;
+    dateAxis.minZoomCount = 5;
 
-  // Three function that change the tooltip when user hover / move / leave a cell
-  var mouseover = function(d) {
-    Tooltip.style("opacity", 1)
-    d3.selectAll(".myArea").style("opacity", .2)
-    d3.select(this)
-      .style("stroke", "black")
-      .style("opacity", 1)
-  }
-  var mousemove = function(d,i) {
-    grp = keys[i]
-    Tooltip.text(grp)
-  }
-  var mouseleave = function(d) {
-    Tooltip.style("opacity", 0)
-    d3.selectAll(".myArea").style("opacity", 1).style("stroke", "none")
-   }
+    var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.tooltip.disabled = true;
+    valueAxis.renderer.innerRadius = -50;
+    valueAxis.renderer.radius = 50;
+    chart.seriesContainer.zIndex = -1;
 
-  // Area generator
-  var area = d3.area()
-    .x(function(d) { return x(d.data.Year); })
-    .y0(function(d) { return y(d[0]); })
-    .y1(function(d) { return y(d[1]); })
+    var series = chart.series.push(new am4plugins_timeline.CurveStepLineSeries());
+    series.fillOpacity = 0.3;
+    series.dataFields.dateX = "date";
+    series.dataFields.valueY = "value";
+    series.tooltipText = "{valueY}";
+    series.tooltip.pointerOrientation = "vertical";
+    series.tooltip.background.fillOpacity = 0.7;
+    series.fill = chart.colors.getIndex(3);
+    series.strokeWidth = 2;
 
-  // Show the areas
-  svg
-    .selectAll("mylayers")
-    .data(stackedData)
-    .enter()
-    .append("path")
-      .attr("class", "myArea")
-      .style("fill", function(d) { return color(d.key); })
-      .attr("d", area)
-      .on("mouseover", mouseover)
-      .on("mousemove", mousemove)
-      .on("mouseleave", mouseleave)
+    chart.cursor = new am4plugins_timeline.CurveCursor();
+    chart.cursor.xAxis = dateAxis;
+    chart.cursor.yAxis = valueAxis;
+    chart.cursor.lineY.disabled = true;
 
-})
+    chart.scrollbarX = new am4core.Scrollbar();
+    chart.scrollbarX.width = am4core.percent(80);
+    chart.scrollbarX.align = "center";
+
+});
+
 </script>
